@@ -2,7 +2,13 @@
 //  OpenShift sample Node application
 var express = require('express');
 var fs      = require('fs');
+var api		= require('./api');
 
+
+/*
+ * Author: Ayon Ghosh
+ * Date: 15 February 2015
+ */
 
 /**
  *  Define the sample application.
@@ -95,14 +101,37 @@ var SampleApp = function() {
     self.createRoutes = function() {
         self.routes = { };
 
-        self.routes['/asciimo'] = function(req, res) {
-            var link = "http://i.imgur.com/kmbjB.png";
-            res.send("<html><body><img src='" + link + "'></body></html>");
-        };
-
         self.routes['/'] = function(req, res) {
             res.setHeader('Content-Type', 'text/html');
             res.send(self.cache_get('index.html') );
+        };
+        
+        
+        self.routes['/js/plot.js'] = function (req, res) {
+    		res.setHeader('Content-Type', 'application/javascript');
+        	res.send(fs.readFileSync('./js/plot.js'));
+    	};
+
+		self.routes['/js/main.js'] = function (req, res) {
+    		res.setHeader('Content-Type', 'application/javascript');
+        	res.send(fs.readFileSync('./js/main.js'));
+    	};
+
+        // API
+        self.routes['/api/getData'] = function (req, res) {
+        	var data = api.getTotalDiskUtilData(req.param('region'), function (json) {
+        		self.sendJsonResponse(res, json);
+        	});
+        };
+        
+        self.routes['/api/getRegions'] = function (req, res) {
+        	res.setHeader('Content-Type', 'application/json');
+        	res.send(JSON.stringify(api.getCountryCodes()));
+        };
+        
+        self.sendJsonResponse = function (res, json) {
+        	res.setHeader('Content-Type', 'application/json');
+        	res.send(JSON.stringify(json));
         };
     };
 
@@ -113,7 +142,7 @@ var SampleApp = function() {
      */
     self.initializeServer = function() {
         self.createRoutes();
-        self.app = express.createServer();
+        self.app = express();
 
         //  Add handlers for the app (from the routes).
         for (var r in self.routes) {
@@ -132,6 +161,9 @@ var SampleApp = function() {
 
         // Create the express server and routes.
         self.initializeServer();
+        
+        // initialize API
+        api.init();
     };
 
 
